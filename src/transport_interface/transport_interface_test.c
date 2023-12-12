@@ -42,6 +42,9 @@
 #include "unity.h"
 #include "unity_fixture.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 /*-----------------------------------------------------------*/
 
 /**
@@ -279,11 +282,15 @@ static bool prvTransportSendData( TransportInterface_t * pTransport,
     uint32_t i;
     bool retValue = true;
 
+    printf("[%d] [%d] sendSize: %d\n", xTaskGetTickCount(), xTaskGetCurrentTaskHandle(), sendSize);
+
     for( i = 0U; i < TRANSPORT_TEST_SEND_RECEIVE_RETRY_COUNT; i++ )
     {
         transportResult = pTransport->send( pNetworkContext,
                                             &pTransportTestBuffer[ transferTotal ],
                                             sendSize - transferTotal );
+
+        printf("[%d] [%d] transportResult: %d\n", xTaskGetTickCount(), xTaskGetCurrentTaskHandle(), transportResult);
 
         /* Send should not have any error. */
         if( transportResult < 0 )
@@ -437,12 +444,15 @@ static bool prvTransportRecvData( TransportInterface_t * pTransport,
     /* Initialize the receive buffer with TRANSPORT_TEST_BUFFER_GUARD_PATTERN. */
     memset( &( pTransportTestBuffer[ 0 ] ), TRANSPORT_TEST_BUFFER_GUARD_PATTERN, recvSize );
 
+    printf("[%d] [%d] recvSize: %d\n", xTaskGetTickCount(), xTaskGetCurrentTaskHandle(), recvSize);
+
     for( i = 0U; i < TRANSPORT_TEST_SEND_RECEIVE_RETRY_COUNT; i++ )
     {
         transportResult = pTransport->recv( pNetworkContext,
                                             &pTransportTestBuffer[ transferTotal ],
                                             recvSize - transferTotal );
 
+        printf("[%d] [%d] transportResult: %d\n", xTaskGetTickCount(), xTaskGetCurrentTaskHandle(), transportResult);
         /* Receive should not have any error. */
         if( transportResult < 0 )
         {
@@ -784,7 +794,7 @@ TEST_TEAR_DOWN( Full_TransportInterfaceTest )
 {
     uint8_t * pTransportTestBuffer = threadParameter[ TRANSPORT_TEST_INDEX ].transportTestBuffer;
     NetworkContext_t * pNetworkContext = threadParameter[ TRANSPORT_TEST_INDEX ].pNetworkContext;
-
+    
     prvVerifyTestBufferGuard( pTransportTestBuffer );
 
     /* Call the hook function implemented by the application to de-initialize the transport interface. */
